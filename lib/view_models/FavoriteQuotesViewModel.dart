@@ -37,7 +37,7 @@ class FavoriteQuotesViewModel extends ChangeNotifier {
   }
 
   void addToFav(Quote quote) {
-    log("Added");
+    log("addToFav");
 
     _quotesList.add(quote);
 
