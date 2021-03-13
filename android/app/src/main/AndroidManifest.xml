@@ -5,7 +5,7 @@
 
 
    <application
-        android:label=""
+        android:label="QuotesApp"
         android:icon="@mipmap/launcher_icon">
         <activity
             android:name=".MainActivity"
