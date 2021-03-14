@@ -1,15 +1,11 @@
-
-
-
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:connectivity/connectivity.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 class helperFunctions {
-
-
-
   static Future<bool> checkNetwork() async {
     try {
       final result = await InternetAddress.lookup('google.com');
@@ -22,25 +18,95 @@ class helperFunctions {
       log('not connected');
     }
   }
-  static Future<bool> OnWillPop(BuildContext context) async {
-    return (await showDialog(
-      context: context,
-      builder: (context) => new AlertDialog(
-        title: Expanded(child: Text('Are you sure?')),
-        content: new Text('Do you want to exit an App'),
-        actions: <Widget>[
-          new FlatButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: new Text('No'),
-          ),
-          new FlatButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: new Text('Yes'),
-          ),
-        ],
-      ),
-    )) ??
-        false;
-  }
 
+  static Future<bool> checkNetwork2() async {
+    try {
+      var result = await Connectivity().checkConnectivity();
+      if (result == ConnectivityResult.none) {
+        Fluttertoast.showToast(
+            msg: "لا يوجد إنترنت",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
+        return true;
+      } else if (result == ConnectivityResult.wifi) {
+        Fluttertoast.showToast(
+            msg: "متصل عن طريق الوايفاي",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+            fontSize: 16.0);
+        return true;
+      }else if (result == ConnectivityResult.mobile){
+        Fluttertoast.showToast(
+            msg: "متصل عن طريق البيانات",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+            fontSize: 16.0);
+        return true;
+      }
+      return false;
+    } on SocketException catch (_) {
+      log('not connected');
+      Fluttertoast.showToast(
+          msg: "not connected",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
+    }
+  }
+  static  checkNetwork3(result)  {
+    try {
+      if (result == ConnectivityResult.none) {
+        Fluttertoast.showToast(
+            msg: "لا يوجد إنترنت",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
+        return true;
+      } else if (result == ConnectivityResult.wifi) {
+        Fluttertoast.showToast(
+            msg: "متصل عن طريق الوايفاي",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+            fontSize: 16.0);
+      }else if (result == ConnectivityResult.mobile){
+        Fluttertoast.showToast(
+            msg: "متصل عن طريق البيانات",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.CENTER,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.green,
+            textColor: Colors.white,
+            fontSize: 16.0);
+      }
+    } on SocketException catch (_) {
+      log('not connected');
+      Fluttertoast.showToast(
+          msg: "not connected",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
+    }
+  }
 }

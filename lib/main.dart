@@ -4,7 +4,9 @@ import 'dart:ui';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
@@ -26,6 +28,11 @@ main() async {
   // SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
   //   statusBarColor: Colors.pink[300].withOpacity(0.1),
   // ));
+
+  LicenseRegistry.addLicense(() async* {
+    final license = await rootBundle.loadString('google_fonts/OFL.txt');
+    yield LicenseEntryWithLineBreaks(['google_fonts'], license);
+  });
 
   runApp(
     ProviderScope(
@@ -56,6 +63,7 @@ class _QuotePageUsingRiverpodState extends State<QuotePageUsingRiverpod> {
   GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   StreamSubscription<ConnectivityResult> subscription;
 
+
   @override
   dispose() {
     super.dispose();
@@ -66,277 +74,149 @@ class _QuotePageUsingRiverpodState extends State<QuotePageUsingRiverpod> {
   void initState() {
     super.initState();
     subscription = Connectivity().onConnectivityChanged.listen((ConnectivityResult result) {
-      if (result == ConnectivityResult.none) {
-        _scaffoldKey.currentState.showBottomSheet((context) {
-          return GestureDetector(
-            onTap: () => Navigator.of(context).pop(), // closing showModalBottomSheet
-            child: Container(
-              height: 100.0,
-              padding: EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                // color: Colors.pink[300],
-                color: Colors.red,
-                boxShadow: [BoxShadow(color: Colors.black26, offset: Offset(0, 5), blurRadius: 20)],
-              ),
-              margin: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: AutoSizeText(
-                    "Check Network Please",
-                    style: styleTitlesWhite,
-                    maxFontSize: 30,
-                    minFontSize: 20,
-                  ),
-                ),
-              ),
-            ),
-          );
-        });
-      } else {
-        _scaffoldKey.currentState.showBottomSheet((context) {
-          return GestureDetector(
-            onTap: () => Navigator.of(context).pop(), // closing showModalBottomSheet
-            child: Container(
-              padding: EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                // color: Colors.pink[300],
-                color: Colors.green,
-                boxShadow: [BoxShadow(color: Colors.black26, offset: Offset(0, 5), blurRadius: 20)],
-              ),
-              margin: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-              height: 100.0,
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: AutoSizeText(
-                    "You Have  Network",
-                    style: styleTitlesWhite,
-                    maxFontSize: 30,
-                    minFontSize: 20,
-                  ),
-                ),
-              ),
-            ),
-          );
-        });
-      }
+      return helperFunctions.checkNetwork3(result);
+
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // final contactsBoxOpen = Hive.isBoxOpen(FAVLIST);
-    // if (contactsBoxOpen) {
-    //   log(" box is Open ? $contactsBoxOpen");
-    // }
-    return WillPopScope(
-      onWillPop: () async {
-        return helperFunctions.OnWillPop(context);
-      },
-      child: Scaffold(
-        key: _scaffoldKey,
-        appBar: AppBar(
-          // centerTitle: true,
-          title: AutoSizeText(
-            "Quotes",
-            style: styleTitlesWhite,
-            minFontSize: 5,
-            maxFontSize: 40,
+    return Scaffold(
+      key: _scaffoldKey,
+      appBar: AppBar(
+        // centerTitle: true,
+        title: AutoSizeText(
+          "Quotes",
+          style: styleTitlesWhite,
+          minFontSize: 5,
+          maxFontSize: 40,
+        ),
+        actions: [
+          IconButton(
+              icon: Icon(Icons.bookmark),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => FavoritePage(),
+                    fullscreenDialog: false,
+                  ),
+                );
+              }),
+          IconButton(
+              icon: Icon(Icons.refresh),
+              onPressed: () {
+                context.refresh(futureQuoteViewModel);
+                context.refresh(rQuotesViewModel);
+              }),
+        ],
+      ),
+      body: ListView(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              color: Colors.pink,
+              width: double.infinity,
+              child: AutoSizeText(
+                "<< ~~~  Using GestureDetector swipe  ~~~ >> ",
+                style: styleTitlesWhite,
+                maxFontSize: 20,
+                minFontSize: 10,
+              ),
+            ),
           ),
-          actions: [
-            IconButton(
-                icon: Icon(Icons.bookmark),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => FavoritePage(),
-                      fullscreenDialog: false,
+
+          /// Using Single Quote View swipe left or right to refresh
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              // color: Colors.pink[300],
+              color: Colors.white70,
+              boxShadow: [BoxShadow(color: Colors.black26, offset: Offset(0, 5), blurRadius: 20)],
+            ),
+            margin: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
+            height: 400,
+            child: GestureDetector(
+              onHorizontalDragEnd: (details) async {
+                return context.refresh(futureQuoteViewModel);
+              },
+              child: Consumer(builder: (BuildContext context, ScopedReader watch, Widget child) {
+                final quotesList = watch(futureQuoteViewModel);
+                return quotesList.map(data: (asyncData) {
+                  Quote q = asyncData.value;
+
+                  return buildItem1(q, context);
+                }, loading: (asyncData) {
+                  return Center(
+                    child: CircularProgressIndicator(
+                      backgroundColor: Colors.pink[100],
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.pink[300]),
                     ),
                   );
-                }),
-            IconButton(
-                icon: Icon(Icons.refresh),
-                onPressed: () {
-                  context.refresh(futureQuoteViewModel);
-                  context.refresh(rQuotesViewModel);
-                }),
-          ],
-        ),
-        body: ListView(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                color: Colors.pink,
-                width: double.infinity,
-                child: AutoSizeText(
-                  "<< ~~~  Using GestureDetector swipe  ~~~ >> ",
-                  style: styleTitlesWhite,
-                  maxFontSize: 20,
-                  minFontSize: 10,
-                ),
-              ),
+                }, error: (error) {
+                  return Text(error.toString());
+                });
+              }),
             ),
+          ),
 
-            /// Using Single Quote View swipe left or right to refresh
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 30, horizontal: 20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                // color: Colors.pink[300],
-                color: Colors.white70,
-                boxShadow: [BoxShadow(color: Colors.black26, offset: Offset(0, 5), blurRadius: 20)],
-              ),
-              margin: EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-              height: 400,
-              child: GestureDetector(
-                onHorizontalDragEnd: (details) async {
-                  return context.refresh(futureQuoteViewModel);
-                },
-                child: Consumer(builder: (BuildContext context, ScopedReader watch, Widget child) {
-                  final quotesList = watch(futureQuoteViewModel);
-                  return quotesList.map(data: (asyncData) {
-                    Quote q = asyncData.value;
-
-                    return buildItem1(q, context);
-                  }, loading: (asyncData) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        backgroundColor: Colors.pink[100],
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.pink[300]),
-                      ),
-                    );
-                  }, error: (error) {
-                    return Text(error.toString());
-                  });
-                }),
-              ),
-            ),
-
-            // TODO :  /// Uncomment to see more Views : Note this is for the demo only Ui
-            /// Using PageView 3 random Quotes swipe Up to refresh
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                color: Colors.pink,
-                width: double.infinity,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Center(
-                    child: AutoSizeText(
-                      "<<<<< ~~~  Using Page View swipe  ~~~ >>>>",
-                      style: styleTitlesWhite,
-                      maxFontSize: 20,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Container(
-              padding: EdgeInsets.symmetric(vertical: 30, horizontal: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                // color: Colors.pink[300],
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 10)],
-              ),
-              margin: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
-              height: 400,
+          // TODO :  /// Uncomment to see more Views : Note this is for the demo only Ui
+          /// Using PageView 3 random Quotes swipe Up to refresh
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              color: Colors.pink,
+              width: double.infinity,
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Consumer(
-                    builder: (BuildContext context, ScopedReader watch, Widget consumerChild) {
-                  final quotesList = watch(rQuotesViewModel);
-                  return quotesList.map(data: (asyncData) {
-                    var quotes = asyncData.value;
-                    // log("test : ${quotes.length}");
-
-                    return quotes.length != 0
-                        ? Container(
-                            // height: 100,
-                            child: PageView.builder(
-                              itemCount: quotes.length,
-                              // shrinkWrap: true,
-                              scrollDirection: Axis.horizontal,
-                              physics: ClampingScrollPhysics(),
-                              itemBuilder: (context, i) {
-                                Quote q = quotes[i];
-
-                                return Container(
-                                    height: 300, width: 300, child: buildItem2(q, context));
-                              },
-                            ),
-
-                            // height: 300,
-                            // width: double.infinity,
-                          )
-                        : Text("No Data");
-                  }, loading: (asyncData) {
-                    return Center(
-                      child: CircularProgressIndicator(
-                        backgroundColor: Colors.pink[100],
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.pink[300]),
-                      ),
-                    );
-                  }, error: (error) {
-                    return Text(error.toString());
-                  });
-                }),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Container(
-                color: Colors.pink,
-                width: double.infinity,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Center(
-                    child: AutoSizeText(
-                      "<<<<< ~~~ Using GridView swipe ~~~ >>>>",
-                      style: styleTitlesWhite,
-                      maxFontSize: 20,
-                    ),
+                child: Center(
+                  child: AutoSizeText(
+                    "<<<<< ~~~  Using Page View swipe  ~~~ >>>>",
+                    style: styleTitlesWhite,
+                    maxFontSize: 20,
                   ),
                 ),
               ),
             ),
-
-            /// Using GridView 3 random Quotes swipe Up to refresh
-            Container(
-              height: 600,
-              // width: 500,
-              // width: double.infinity,
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 30, horizontal: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              // color: Colors.pink[300],
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black54, offset: Offset(1, 1), blurRadius: 10)],
+            ),
+            margin: EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+            height: 400,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
               child: Consumer(
                   builder: (BuildContext context, ScopedReader watch, Widget consumerChild) {
                 final quotesList = watch(rQuotesViewModel);
-                var crossAxisCount = 2;
-                var childAspectRatio = 1.0;
-
                 return quotesList.map(data: (asyncData) {
                   var quotes = asyncData.value;
-
                   // log("test : ${quotes.length}");
 
                   return quotes.length != 0
-                      ? GridView.builder(
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            childAspectRatio: childAspectRatio,
+                      ? Container(
+                          // height: 100,
+                          child: PageView.builder(
+                            itemCount: quotes.length,
+                            // shrinkWrap: true,
+                            scrollDirection: Axis.horizontal,
+                            physics: ClampingScrollPhysics(),
+                            itemBuilder: (context, i) {
+                              Quote q = quotes[i];
+
+                              return Container(
+                                  height: 300, width: 300, child: buildItem2(q, context));
+                            },
                           ),
 
-                          itemCount: quotes.length,
-                          // shrinkWrap: true,
-                          scrollDirection: Axis.horizontal,
-                          shrinkWrap: true,
-                          physics: ClampingScrollPhysics(),
-                          itemBuilder: (context, i) {
-                            Quote q = quotes[i];
-                            return Container(child: buildItem3(q, context));
-                          },
+                          // height: 300,
+                          // width: double.infinity,
                         )
                       : Text("No Data");
                 }, loading: (asyncData) {
@@ -351,8 +231,72 @@ class _QuotePageUsingRiverpodState extends State<QuotePageUsingRiverpod> {
                 });
               }),
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Container(
+              color: Colors.pink,
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Center(
+                  child: AutoSizeText(
+                    "<<<<< ~~~ Using GridView swipe ~~~ >>>>",
+                    style: styleTitlesWhite,
+                    maxFontSize: 20,
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          /// Using GridView 3 random Quotes swipe Up to refresh
+          Container(
+            height: 600,
+            // width: 500,
+            // width: double.infinity,
+            child:
+                Consumer(builder: (BuildContext context, ScopedReader watch, Widget consumerChild) {
+              final quotesList = watch(rQuotesViewModel);
+              var crossAxisCount = 2;
+              var childAspectRatio = 1.0;
+
+              return quotesList.map(data: (asyncData) {
+                var quotes = asyncData.value;
+
+                // log("test : ${quotes.length}");
+
+                return quotes.length != 0
+                    ? GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: crossAxisCount,
+                          childAspectRatio: childAspectRatio,
+                        ),
+
+                        itemCount: quotes.length,
+                        // shrinkWrap: true,
+                        scrollDirection: Axis.horizontal,
+                        shrinkWrap: true,
+                        physics: ClampingScrollPhysics(),
+                        itemBuilder: (context, i) {
+                          Quote q = quotes[i];
+                          return Container(child: buildItem3(q, context));
+                        },
+                      )
+                    : Text("No Data");
+              }, loading: (asyncData) {
+                return Center(
+                  child: CircularProgressIndicator(
+                    backgroundColor: Colors.pink[100],
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.pink[300]),
+                  ),
+                );
+              }, error: (error) {
+                return Text(error.toString());
+              });
+            }),
+          ),
+        ],
       ),
     );
   }
@@ -438,7 +382,6 @@ class _QuotePageUsingRiverpodState extends State<QuotePageUsingRiverpod> {
     );
   }
 
-
   Widget buildItem2(Quote quote, BuildContext context) {
     liked = context.read(favNotifier).isLiked;
     log("buildItem2 liked : $liked");
@@ -481,13 +424,13 @@ class _QuotePageUsingRiverpodState extends State<QuotePageUsingRiverpod> {
                   IconButton(
                       icon: !isfav2
                           ? Icon(
-                        Icons.bookmark_border,
-                        color: Colors.black45,
-                      )
+                              Icons.bookmark_border,
+                              color: Colors.black45,
+                            )
                           : Icon(
-                        Icons.bookmark,
-                        color: Colors.black45,
-                      ),
+                              Icons.bookmark,
+                              color: Colors.black45,
+                            ),
                       onPressed: () async {
                         !isfav2
                             ? context.read(favNotifier).addToFav(quote)
@@ -565,13 +508,13 @@ class _QuotePageUsingRiverpodState extends State<QuotePageUsingRiverpod> {
                     IconButton(
                         icon: !isfav2
                             ? Icon(
-                          Icons.bookmark_border,
-                          color: Colors.black45,
-                        )
+                                Icons.bookmark_border,
+                                color: Colors.black45,
+                              )
                             : Icon(
-                          Icons.bookmark,
-                          color: Colors.black45,
-                        ),
+                                Icons.bookmark,
+                                color: Colors.black45,
+                              ),
                         onPressed: () async {
                           !isfav2
                               ? context.read(favNotifier).addToFav(quote)

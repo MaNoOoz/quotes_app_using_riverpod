@@ -46,7 +46,6 @@ android {
         versionName flutterVersionName
     }
     signingConfigs {
-        /// todo UNCOMMENT THIS IF U U WANTS TO USE CI
         release {
 
             if (System.getenv()["CI"]) { // CI=true is exported by Codemagic
